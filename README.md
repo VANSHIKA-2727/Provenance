@@ -14,6 +14,9 @@ The system focuses on correctness, transparency, and audit readiness, turning ra
 - **AI Design & Reasoning Log (ChatGPT)**  
   https://chatgpt.com/c/6967c557-c610-8322-beeb-e68d5bd7f4a2
 
+- **BRSR Regulatory RAG Pipeline (Reference Tooling)**  
+  https://github.com/About-Rudra/BRSR-RAG
+
 ---
 
 ## Status
