@@ -47,4 +47,3 @@ jest.config.js
 # Misc
 .tmp/
 .cache/
-db.txt

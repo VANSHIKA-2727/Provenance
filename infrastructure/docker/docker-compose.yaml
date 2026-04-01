@@ -1,0 +1,27 @@
+services:
+  web:
+    build:
+      context: ../../web
+    container_name: provenance-web
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../../web:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ../../server
+    container_name: provenance-server
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../../server:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
