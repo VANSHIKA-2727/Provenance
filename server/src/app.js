@@ -1,10 +1,12 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import authRoutes from "./routes/auth.routes.js";
-import companyRoutes from "./routes/company.routes.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 import { env } from "./config/env.js";
+
+import authRoutes from "./routes/auth.routes.js";
+import documentRoutes from "./routes/documents.routes.js";
+import companyRoutes from "./routes/company.routes.js";
 
 const app = express();
 
@@ -28,6 +30,7 @@ app.get("/health", (_, res) =>
 
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
+app.use("/api/documents", documentRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

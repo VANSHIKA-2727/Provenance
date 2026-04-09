@@ -47,3 +47,5 @@ jest.config.js
 # Misc
 .tmp/
 .cache/
+
+env.js
