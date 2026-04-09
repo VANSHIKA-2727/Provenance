@@ -1,204 +1,231 @@
-import React, { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Eye, EyeOff, Check } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export default function ResetPassword() {
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [mounted, setMounted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get("access_token");
-    
+    const accessToken = hashParams.get('access_token');
+
     if (accessToken) {
       supabase.auth.setSession({
         access_token: accessToken,
-        refresh_token: hashParams.get("refresh_token")
+        refresh_token: hashParams.get('refresh_token')
       });
     }
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
+    setSuccess(false);
+
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match');
+      return;
+    }
+
     setLoading(true);
-    
+
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      window.location.href = "/auth";
+      setSuccess(true);
     } catch (err) {
-      setError(err.message);
+      setErrorMessage(err.message || 'Unable to update password');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div 
-      style={{ 
-        fontFamily: "'DM Sans', sans-serif", 
-        background: "#fafafa", 
-        minHeight: "100vh", 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center", 
-        padding: "24px" 
-      }}
+    <div
+      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-base)' }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
-        
-        * { box-sizing: border-box; }
-        
-        .fade-up { 
-          opacity: 0; 
-          transform: translateY(20px); 
-          transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); 
+        @keyframes float1 {
+          0% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-30px) rotate(180deg); }
+          100% { transform: translateY(0px) rotate(360deg); }
         }
-        
-        .fade-up.visible { 
-          opacity: 1; 
-          transform: none; 
+
+        @keyframes float2 {
+          0% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-40px) rotate(180deg); }
+          100% { transform: translateY(0px) rotate(360deg); }
         }
-        
-        .mono { 
-          font-family: 'DM Mono', monospace; 
+
+        @keyframes float3 {
+          0% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-25px) rotate(180deg); }
+          100% { transform: translateY(0px) rotate(360deg); }
         }
-        
-        .auth-input { 
-          font-family: 'DM Sans', sans-serif; 
-          font-size: 14px; 
-          padding: 12px 16px; 
-          border: 1px solid #e5e5e5; 
-          border-radius: 6px; 
-          outline: none; 
-          background: #fafafa; 
-          color: #0a0a0a; 
-          transition: border-color 0.2s, background 0.2s; 
-          width: 100%; 
+
+        .bg-circle1 {
+          position: absolute;
+          top: 10%;
+          left: 10%;
+          width: 200px;
+          height: 200px;
+          background: linear-gradient(45deg, var(--accent-blue-s), var(--accent-green-s));
+          border-radius: 50%;
+          filter: blur(40px);
+          opacity: 0.3;
+          animation: float1 6s ease-in-out infinite;
         }
-        
-        .auth-input::placeholder { color: #a3a3a3; }
-        .auth-input:focus { border-color: #059669; background: #fff; }
-        
-        .btn-dark { 
-          display: inline-flex; 
-          align-items: center; 
-          justify-content: center; 
-          background: #0a0a0a; 
-          color: #fff; 
-          font-size: 13px; 
-          font-weight: 500; 
-          padding: 12px 24px; 
-          border-radius: 6px; 
-          border: none; 
-          cursor: pointer; 
-          text-decoration: none; 
-          transition: background 0.2s, transform 0.15s; 
-          width: 100%; 
+
+        .bg-circle2 {
+          position: absolute;
+          top: 60%;
+          right: 15%;
+          width: 150px;
+          height: 150px;
+          background: linear-gradient(45deg, var(--accent-purple-s), var(--accent-orange-s));
+          border-radius: 50%;
+          filter: blur(30px);
+          opacity: 0.2;
+          animation: float2 8s ease-in-out infinite;
         }
-        
-        .btn-dark:hover:not(:disabled) { background: #1a1a1a; }
-        .btn-dark:active:not(:disabled) { transform: scale(0.98); }
-        .btn-dark:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .bg-circle3 {
+          position: absolute;
+          bottom: 20%;
+          left: 50%;
+          width: 180px;
+          height: 180px;
+          background: linear-gradient(45deg, var(--accent-green-s), var(--accent-blue-s));
+          border-radius: 50%;
+          filter: blur(35px);
+          opacity: 0.25;
+          animation: float3 7s ease-in-out infinite;
+        }
       `}</style>
 
-      <div 
-        className={`fade-up ${mounted ? "visible" : ""}`} 
-        style={{ 
-          background: "#fff", 
-          borderRadius: "14px", 
-          border: "1px solid #e5e5e5", 
-          padding: "40px", 
-          width: "100%", 
-          maxWidth: "400px", 
-          boxShadow: "0 4px 24px rgba(0,0,0,0.03)" 
-        }}
+      <div className="bg-circle1" />
+      <div className="bg-circle2" />
+      <div className="bg-circle3" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="p-card max-w-md w-full mx-4"
       >
-        <div style={{ marginBottom: "32px", textAlign: "center" }}>
-          <p 
-            className="mono" 
-            style={{ 
-              fontSize: "11px", 
-              fontWeight: 500, 
-              color: "#059669", 
-              letterSpacing: "0.1em", 
-              textTransform: "uppercase", 
-              marginBottom: "12px" 
-            }}
+        <div className="text-center mb-6">
+          <div
+            className="inline-flex items-center justify-center mx-auto mb-4"
+            style={{ width: 64, height: 64, backgroundColor: 'var(--accent-green-s)', borderRadius: '16px' }}
           >
-            System Security
-          </p>
-          <h2 
-            style={{ 
-              fontSize: "28px", 
-              fontWeight: 600, 
-              letterSpacing: "-0.02em", 
-              color: "#0a0a0a", 
-              margin: 0 
-            }}
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2.5L19.5 7.5V16.5L12 21.5L4.5 16.5V7.5L12 2.5Z" stroke="var(--accent-green)" strokeWidth="2" fill="var(--bg-base)" />
+              <path d="M12 7V12.5L15.5 14.75" stroke="var(--accent-green)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+          <h1
+            className="text-3xl font-semibold"
+            style={{ fontFamily: 'Syne, serif', color: 'var(--text-primary)' }}
           >
-            Reset Password
-          </h2>
+            Set new password
+          </h1>
         </div>
 
-        {error && (
-          <div 
-            className="mono" 
-            style={{ 
-              fontSize: "11px", 
-              background: "#fff", 
-              color: "#dc2626", 
-              padding: "12px", 
-              borderRadius: "6px", 
-              border: "1px solid #fecaca", 
-              marginBottom: "24px", 
-              textAlign: "center",
-              letterSpacing: "0.02em"
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "24px" }}>
-            <label 
-              className="mono" 
-              style={{ 
-                display: "block", 
-                fontSize: "11px", 
-                fontWeight: 500, 
-                color: "#737373", 
-                letterSpacing: "0.06em", 
-                textTransform: "uppercase", 
-                marginBottom: "8px" 
-              }}
+        <AnimatePresence mode="wait" initial={false}>
+          {errorMessage ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="mb-4 p-3 rounded-md text-sm"
+              style={{ backgroundColor: 'var(--error-bg)', color: 'var(--error)', border: '1px solid var(--error-border)' }}
             >
-              New Credential
+              {errorMessage}
+            </motion.div>
+          ) : success ? (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="mb-4 p-3 rounded-md text-sm flex items-center gap-2"
+              style={{ backgroundColor: 'var(--success-bg)', color: 'var(--success)', border: '1px solid var(--success-border)' }}
+            >
+              <Check className="w-4 h-4" />
+              Password updated successfully!
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+              New Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter new password"
-              className="auth-input"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="p-input pr-10"
+                placeholder="Enter new password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                style={{ color: 'var(--text-secondary)' }}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading} 
-            className="btn-dark"
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="p-input pr-10"
+                placeholder="Confirm new password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                style={{ color: 'var(--text-secondary)' }}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full"
           >
-            {loading ? "Updating Record..." : "Confirm Update"}
+            {loading ? 'Updating...' : 'Set Password'}
           </button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }
