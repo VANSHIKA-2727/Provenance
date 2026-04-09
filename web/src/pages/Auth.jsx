@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 const styles = `
@@ -24,22 +25,21 @@ function FullscreenLoader({ message }) {
         animation: "fadeIn 0.25s ease",
       }}
     >
-      <div style={{ position: "relative", marginBottom: "28px" }}>
-        <div
-          style={{
-            width: "44px",
-            height: "44px",
-            borderRadius: "50%",
-            border: "1.5px solid #1f1f1f",
-            borderTop: "1.5px solid #059669",
-            animation: "spin 0.75s linear infinite",
-          }}
-        />
-      </div>
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          border: "1.5px solid #1f1f1f",
+          borderTop: "1.5px solid #059669",
+          animation: "spin 0.75s linear infinite",
+          marginBottom: 28,
+        }}
+      />
       <p
         style={{
-          fontFamily: "'Geist Mono', 'Courier New', monospace",
-          fontSize: "10px",
+          fontFamily: "'DM Mono', monospace",
+          fontSize: 10,
           letterSpacing: "0.18em",
           textTransform: "uppercase",
           color: "#059669",
@@ -61,12 +61,12 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [transitioning, setTransitioning] = useState(false);
-  const [transitionMessage, setTransitionMessage] =
-    useState("Authenticating...");
+  const [transitionMessage, setTransitionMessage] = useState("Authenticating...");
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
 
   const API_URL = import.meta.env.VITE_API_URL;
+  const navigate = useNavigate();
 
   const syncWithBackend = async (token) => {
     const response = await fetch(`${API_URL}/api/auth/sync`, {
@@ -82,7 +82,7 @@ export default function Auth() {
     setTransitionMessage(msg);
     setTransitioning(true);
     await new Promise((r) => setTimeout(r, 900));
-    window.location.href = "/home";
+    navigate("/dashboard");
   };
 
   useEffect(() => {
@@ -91,25 +91,12 @@ export default function Auth() {
       const accessToken = hashParams.get("access_token");
 
       if (accessToken) {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.setSession({
+        const { data: { session }, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: hashParams.get("refresh_token"),
         });
-
-        if (error || !session) {
-          setInitializing(false);
-          return;
-        }
-
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname,
-        );
-
+        if (error || !session) { setInitializing(false); return; }
+        window.history.replaceState({}, document.title, window.location.pathname);
         try {
           await syncWithBackend(session.access_token);
           await redirectToHome("Signing in...");
@@ -120,10 +107,7 @@ export default function Auth() {
         return;
       }
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         try {
           await syncWithBackend(session.access_token);
@@ -132,18 +116,14 @@ export default function Auth() {
           await supabase.auth.signOut();
         }
       }
-
       setInitializing(false);
     };
-
     handleAuth();
   }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const mode = params.get("mode");
-
-    setIsLogin(mode !== "signup");
+    setIsLogin(params.get("mode") !== "signup");
   }, []);
 
   const handleGoogleLogin = async () => {
@@ -153,10 +133,7 @@ export default function Auth() {
       provider: "google",
       options: { redirectTo: window.location.origin + "/auth" },
     });
-    if (error) {
-      setTransitioning(false);
-      setError(error.message);
-    }
+    if (error) { setTransitioning(false); setError(error.message); }
   };
 
   const handleMicrosoftLogin = async () => {
@@ -166,10 +143,7 @@ export default function Auth() {
       provider: "azure",
       options: { redirectTo: window.location.origin + "/auth" },
     });
-    if (error) {
-      setTransitioning(false);
-      setError(error.message);
-    }
+    if (error) { setTransitioning(false); setError(error.message); }
   };
 
   const handleEmailAuth = async (e) => {
@@ -177,13 +151,9 @@ export default function Auth() {
     setLoading(true);
     setError(null);
     setMessage(null);
-
     try {
       if (isLogin) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw new Error(error.message);
         if (!data.session) throw new Error("Login failed. Please try again.");
         await syncWithBackend(data.session.access_token);
@@ -192,15 +162,11 @@ export default function Auth() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: { company_name: companyName, gst_number: gstNumber },
-          },
+          options: { data: { company_name: companyName, gst_number: gstNumber } },
         });
         if (error) throw new Error(error.message);
         if (!data.session) {
-          setMessage(
-            "Check your email to confirm your account before signing in.",
-          );
+          setMessage("Check your email to confirm your account before signing in.");
           setLoading(false);
           return;
         }
@@ -214,10 +180,7 @@ export default function Auth() {
   };
 
   const handleForgotPassword = async () => {
-    if (!email) {
-      setError("Please enter your email address first");
-      return;
-    }
+    if (!email) { setError("Please enter your email address first"); return; }
     setLoading(true);
     setError(null);
     setMessage(null);
@@ -234,307 +197,514 @@ export default function Auth() {
     }
   };
 
-  if (initializing || transitioning) {
-    return (
-      <>
-        <style>{styles}</style>
-        <FullscreenLoader
-          message={transitioning ? transitionMessage : "Loading..."}
-        />
-      </>
-    );
-  }
-
   const toggleMode = () => {
     const nextMode = isLogin ? "signup" : "login";
-
     setIsLogin(!isLogin);
     setError(null);
     setMessage(null);
-
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.set("mode", nextMode);
     window.history.replaceState({}, "", newUrl);
   };
 
+  if (initializing || transitioning) {
+    return (
+      <>
+        <style>{styles}</style>
+        <FullscreenLoader message={transitioning ? transitionMessage : "Loading..."} />
+      </>
+    );
+  }
+
   return (
     <div
-      className="h-screen flex overflow-hidden bg-white text-neutral-900 antialiased selection:bg-emerald-600 selection:text-white"
-      style={{ animation: "slideUp 0.35s ease both" }}
+      style={{
+        fontFamily: "'DM Sans', sans-serif",
+        background: "#fff",
+        color: "#0a0a0a",
+        height: "100vh",
+        display: "flex",
+        overflow: "hidden",
+        animation: "slideUp 0.35s ease both",
+      }}
     >
       <style>{styles}</style>
 
-      <div className="hidden lg:flex lg:w-[45%] h-full bg-neutral-950 p-16 flex-col justify-between relative overflow-hidden border-r border-neutral-900">
+      {/* LEFT PANEL */}
+      <div
+        style={{
+          width: "42%",
+          flexShrink: 0,
+          background: "#0a0a0a",
+          padding: "48px 40px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* subtle grid */}
         <div
-          className="absolute inset-0 opacity-[0.05] pointer-events-none"
           style={{
+            position: "absolute",
+            inset: 0,
             backgroundImage:
-              "linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
+              "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+            pointerEvents: "none",
           }}
         />
-        <div className="absolute inset-0 opacity-20 pointer-events-none bg-gradient-to-br from-neutral-950 via-neutral-950 to-emerald-950/30" />
 
-        <div className="relative z-10">
-          <h1 className="text-5xl lg:text-6xl font-bold tracking-tighter leading-[1.05] text-white max-w-lg mt-12">
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#059669" }} />
+            <span
+              style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "#fff",
+              }}
+            >
+              Provenance
+            </span>
+          </div>
+          <h2
+            style={{
+              fontSize: 36,
+              fontWeight: 600,
+              letterSpacing: "-0.025em",
+              lineHeight: 1.1,
+              color: "#fff",
+              maxWidth: 280,
+            }}
+          >
             The immutable ledger for your compliance posture.
-          </h1>
+          </h2>
         </div>
 
-        <div className="relative z-10 border-t border-neutral-800 pt-8">
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            borderTop: "1px solid #1f1f1f",
+            paddingTop: 20,
+          }}
+        >
           <p
-            className="text-[11px] text-emerald-500 uppercase tracking-widest font-bold mb-2"
-            style={{ fontFamily: "'Geist Mono', monospace" }}
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: 10,
+              color: "#059669",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              marginBottom: 6,
+            }}
           >
-            SYSTEM_STATUS
+            System_Status
           </p>
-          <p className="text-[14px] text-neutral-300 font-medium">
+          <p style={{ fontSize: 13, color: "#737373", fontWeight: 400 }}>
             All telemetry pipelines active.
           </p>
         </div>
       </div>
 
-      <div className="flex-1 h-full overflow-y-auto flex flex-col justify-between p-6 sm:p-12 lg:p-24 bg-white relative">
-        <div className="absolute top-6 left-6 sm:top-10 sm:left-10 z-10">
-          <a
-            href="/"
-            className="flex items-center gap-2 text-[13px] font-bold text-neutral-500 hover:text-neutral-950 transition-colors bg-white px-3 py-2 rounded-lg hover:bg-neutral-50"
-            style={{ textDecoration: "none" }}
+      {/* RIGHT PANEL */}
+      <div
+        style={{
+          flex: 1,
+          padding: "48px 40px",
+          display: "flex",
+          flexDirection: "column",
+          overflowY: "auto",
+        }}
+      >
+        <a
+          href="/"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            fontFamily: "'DM Mono', monospace",
+            fontSize: 11,
+            fontWeight: 500,
+            color: "#a3a3a3",
+            textDecoration: "none",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            marginBottom: 40,
+            transition: "color 0.15s",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.color = "#0a0a0a")}
+          onMouseOut={(e) => (e.currentTarget.style.color = "#a3a3a3")}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          Back to website
+        </a>
+
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            maxWidth: 380,
+          }}
+        >
+          {/* Mode toggle */}
+          <div
+            style={{
+              display: "flex",
+              border: "1px solid #e5e5e5",
+              borderRadius: 6,
+              overflow: "hidden",
+              marginBottom: 28,
+            }}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            {[
+              { label: "Sign In", mode: true },
+              { label: "Create Workspace", mode: false },
+            ].map(({ label, mode }) => (
+              <button
+                key={label}
+                onClick={() => { setIsLogin(mode); setError(null); setMessage(null); }}
+                style={{
+                  flex: 1,
+                  padding: "10px 0",
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  border: "none",
+                  background: isLogin === mode ? "#0a0a0a" : "#fafafa",
+                  color: isLogin === mode ? "#fff" : "#a3a3a3",
+                  cursor: "pointer",
+                  transition: "background 0.15s, color 0.15s",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 14, color: "#737373", fontWeight: 400, lineHeight: 1.5, marginBottom: 28 }}>
+            {isLogin
+              ? "Enter your credentials to access your enterprise dashboard."
+              : "Set up your workspace to begin syncing telemetry data."}
+          </p>
+
+          {/* Social buttons */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+            {[
+              {
+                label: "Google",
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                  </svg>
+                ),
+                onClick: handleGoogleLogin,
+              },
+              {
+                label: "Microsoft",
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 21 21">
+                    <path d="M1 1h9v9H1z" fill="#F25022"/>
+                    <path d="M11 1h9v9h-9z" fill="#7FBA00"/>
+                    <path d="M1 11h9v9H1z" fill="#00A4EF"/>
+                    <path d="M11 11h9v9h-9z" fill="#FFB900"/>
+                  </svg>
+                ),
+                onClick: handleMicrosoftLogin,
+              },
+            ].map(({ label, icon, onClick }) => (
+              <button
+                key={label}
+                onClick={onClick}
+                disabled={loading}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  padding: "11px 16px",
+                  border: "1px solid #e5e5e5",
+                  borderRadius: 6,
+                  background: "#fafafa",
+                  cursor: "pointer",
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "#525252",
+                  transition: "border-color 0.15s, background 0.15s, color 0.15s",
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.borderColor = "#d4d4d4"; e.currentTarget.style.color = "#0a0a0a"; }}
+                onMouseOut={(e) => { e.currentTarget.style.borderColor = "#e5e5e5"; e.currentTarget.style.color = "#525252"; }}
+              >
+                {icon}
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+            <div style={{ flex: 1, height: 1, background: "#f0f0f0" }} />
+            <span
+              style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 10,
+                color: "#a3a3a3",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+              }}
             >
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            Back to website
-          </a>
-        </div>
-
-        <div className="lg:hidden flex items-center gap-3 cursor-pointer mb-12 mt-10">
-          <img
-            src="/provenance.png"
-            alt="Provenance Logo"
-            className="h-8 filter invert"
-          />
-          <span className="text-[16px] font-bold tracking-widest uppercase">
-            Provenance
-          </span>
-        </div>
-
-        <div className="w-full max-w-[440px] mx-auto flex-1 flex flex-col justify-center">
-          <div className="mb-10">
-            <h2 className="text-3xl font-bold tracking-tight text-neutral-950 mb-3">
-              {isLogin ? "Welcome back" : "Initialize account"}
-            </h2>
-            <p className="text-[15px] text-neutral-500 font-light leading-relaxed">
-              {isLogin
-                ? "Enter your credentials to access your enterprise dashboard."
-                : "Set up your workspace to begin syncing telemetry data."}
-            </p>
+              or continue with email
+            </span>
+            <div style={{ flex: 1, height: 1, background: "#f0f0f0" }} />
           </div>
 
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className="flex items-center justify-center gap-3 px-6 py-3.5 bg-white border border-neutral-200 rounded-lg shadow-sm hover:bg-neutral-50 hover:border-neutral-300 transition-colors cursor-pointer group w-full disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    fill="#4285F4"
-                  />
-                  <path
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    fill="#34A853"
-                  />
-                  <path
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    fill="#FBBC05"
-                  />
-                  <path
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    fill="#EA4335"
-                  />
-                </svg>
-                <span className="text-[13px] font-bold uppercase tracking-widest text-neutral-700 group-hover:text-neutral-950 transition-colors">
-                  Google
-                </span>
-              </button>
-
-              <button
-                onClick={handleMicrosoftLogin}
-                disabled={loading}
-                className="flex items-center justify-center gap-3 px-6 py-3.5 bg-white border border-neutral-200 rounded-lg shadow-sm hover:bg-neutral-50 hover:border-neutral-300 transition-colors cursor-pointer group w-full disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 21 21">
-                  <path d="M1 1h9v9H1z" fill="#F25022" />
-                  <path d="M11 1h9v9h-9z" fill="#7FBA00" />
-                  <path d="M1 11h9v9H1z" fill="#00A4EF" />
-                  <path d="M11 11h9v9h-9z" fill="#FFB900" />
-                </svg>
-                <span className="text-[13px] font-bold uppercase tracking-widest text-neutral-700 group-hover:text-neutral-950 transition-colors">
-                  Microsoft
-                </span>
-              </button>
+          {/* Alerts */}
+          {error && (
+            <div
+              style={{
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: 6,
+                padding: "12px 14px",
+                fontSize: 13,
+                color: "#dc2626",
+                marginBottom: 16,
+                animation: "slideUp 0.2s ease",
+              }}
+            >
+              {error}
             </div>
-
-            <div className="relative flex items-center py-2">
-              <div className="flex-grow border-t border-neutral-200"></div>
-              <span
-                className="flex-shrink-0 mx-4 text-[10px] uppercase tracking-widest font-bold text-neutral-400"
-                style={{ fontFamily: "'Geist Mono', monospace" }}
-              >
-                Or continue with email
-              </span>
-              <div className="flex-grow border-t border-neutral-200"></div>
+          )}
+          {message && (
+            <div
+              style={{
+                background: "#ecfdf5",
+                border: "1px solid #a7f3d0",
+                borderRadius: 6,
+                padding: "12px 14px",
+                fontSize: 13,
+                color: "#059669",
+                marginBottom: 16,
+                animation: "slideUp 0.2s ease",
+              }}
+            >
+              {message}
             </div>
+          )}
 
-            {error && (
-              <div
-                className="bg-red-50 border border-red-200 rounded-lg p-4"
-                style={{ animation: "slideUp 0.2s ease" }}
-              >
-                <p className="text-red-600 text-sm font-medium">{error}</p>
-              </div>
+          {/* Form */}
+          <form onSubmit={handleEmailAuth}>
+            {!isLogin && (
+              <>
+                <FieldWrap label="Company Name">
+                  <AuthInput
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Acme Industries Pvt Ltd"
+                    required
+                  />
+                </FieldWrap>
+                <FieldWrap label="GST Number">
+                  <AuthInput
+                    type="text"
+                    value={gstNumber}
+                    onChange={(e) => setGstNumber(e.target.value)}
+                    placeholder="22AAAAA0000A1Z5"
+                    required
+                  />
+                </FieldWrap>
+              </>
             )}
 
-            {message && (
-              <div
-                className="bg-emerald-50 border border-emerald-200 rounded-lg p-4"
-                style={{ animation: "slideUp 0.2s ease" }}
-              >
-                <p className="text-emerald-700 text-sm font-medium">
-                  {message}
-                </p>
-              </div>
-            )}
+            <FieldWrap label="Work Email">
+              <AuthInput
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@enterprise.com"
+                required
+              />
+            </FieldWrap>
 
-            <form className="space-y-5" onSubmit={handleEmailAuth}>
-              {!isLogin && (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-neutral-700 uppercase tracking-widest ml-1">
-                      Company Name
-                    </label>
-                    <input
-                      type="text"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder="Your Company Pvt Ltd"
-                      required
-                      className="w-full text-[14px] rounded-lg px-4 py-4 outline-none border border-neutral-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10 bg-neutral-50/50 focus:bg-white text-neutral-950 placeholder-neutral-400 font-medium transition-all shadow-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-neutral-700 uppercase tracking-widest ml-1">
-                      GST Number
-                    </label>
-                    <input
-                      type="text"
-                      value={gstNumber}
-                      onChange={(e) => setGstNumber(e.target.value)}
-                      placeholder="22AAAAA0000A1Z5"
-                      required
-                      className="w-full text-[14px] rounded-lg px-4 py-4 outline-none border border-neutral-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10 bg-neutral-50/50 focus:bg-white text-neutral-950 placeholder-neutral-400 font-medium transition-all shadow-sm"
-                    />
-                  </div>
-                </>
-              )}
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-neutral-700 uppercase tracking-widest ml-1">
-                  Work Email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@enterprise.com"
-                  required
-                  className="w-full text-[14px] rounded-lg px-4 py-4 outline-none border border-neutral-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10 bg-neutral-50/50 focus:bg-white text-neutral-950 placeholder-neutral-400 font-medium transition-all shadow-sm"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between ml-1">
-                  <label className="text-[11px] font-bold text-neutral-700 uppercase tracking-widest">
-                    Password
-                  </label>
-                  {isLogin && (
-                    <button
-                      type="button"
-                      onClick={handleForgotPassword}
-                      className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest cursor-pointer hover:text-emerald-700"
-                    >
-                      Forgot Password?
-                    </button>
-                  )}
-                </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                  className="w-full text-[14px] rounded-lg px-4 py-4 outline-none border border-neutral-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10 bg-neutral-50/50 focus:bg-white text-neutral-950 placeholder-neutral-400 font-medium transition-all shadow-sm"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-neutral-950 text-white rounded-lg shadow-md text-[13px] font-bold px-4 py-4 hover:bg-neutral-800 transition-colors uppercase tracking-widest cursor-pointer mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-3">
-                    <span
-                      style={{
-                        width: "13px",
-                        height: "13px",
-                        borderRadius: "50%",
-                        border: "1.5px solid rgba(255,255,255,0.25)",
-                        borderTop: "1.5px solid #fff",
-                        display: "inline-block",
-                        animation: "spin 0.7s linear infinite",
-                      }}
-                    />
-                    Processing...
-                  </span>
-                ) : isLogin ? (
-                  "Sign In"
-                ) : (
-                  "Create Workspace"
-                )}
-              </button>
-            </form>
-
-            <div className="pt-4 text-center">
-              <p className="text-[14px] text-neutral-500 font-light">
-                {isLogin
-                  ? "Don't have an account? "
-                  : "Already have an account? "}
-                <button
-                  type="button"
-                  onClick={toggleMode}
-                  className="text-neutral-950 font-bold cursor-pointer"
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span
+                  style={{
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: 10,
+                    fontWeight: 500,
+                    color: "#0a0a0a",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
                 >
-                  {isLogin ? "Create Workspace" : "Sign In"}
-                </button>
-              </p>
+                  Password
+                </span>
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    style={{
+                      fontFamily: "'DM Mono', monospace",
+                      fontSize: 10,
+                      fontWeight: 500,
+                      color: "#059669",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      cursor: "pointer",
+                      background: "none",
+                      border: "none",
+                    }}
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+              <AuthInput
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+              />
             </div>
-          </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "13px 0",
+                background: "#0a0a0a",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
+                marginTop: 8,
+                transition: "background 0.2s",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+              }}
+              onMouseOver={(e) => { if (!loading) e.currentTarget.style.background = "#1a1a1a"; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = "#0a0a0a"; }}
+            >
+              {loading ? (
+                <>
+                  <span
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: "50%",
+                      border: "1.5px solid rgba(255,255,255,0.25)",
+                      borderTop: "1.5px solid #fff",
+                      display: "inline-block",
+                      animation: "spin 0.7s linear infinite",
+                    }}
+                  />
+                  Processing...
+                </>
+              ) : isLogin ? (
+                "Sign In"
+              ) : (
+                "Create Workspace"
+              )}
+            </button>
+          </form>
+
+          <p style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "#737373" }}>
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button
+              type="button"
+              onClick={toggleMode}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#0a0a0a",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              {isLogin ? "Create Workspace" : "Sign In"}
+            </button>
+          </p>
         </div>
       </div>
     </div>
+  );
+}
+
+function FieldWrap({ label, children }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label
+        style={{
+          display: "block",
+          fontFamily: "'DM Mono', monospace",
+          fontSize: 10,
+          fontWeight: 500,
+          color: "#0a0a0a",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function AuthInput(props) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <input
+      {...props}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={{
+        width: "100%",
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: 14,
+        fontWeight: 400,
+        padding: "11px 14px",
+        border: `1px solid ${focused ? "#059669" : "#e5e5e5"}`,
+        borderRadius: 6,
+        background: focused ? "#fff" : "#fafafa",
+        color: "#0a0a0a",
+        outline: "none",
+        transition: "border-color 0.2s, background 0.2s",
+      }}
+    />
   );
 }
