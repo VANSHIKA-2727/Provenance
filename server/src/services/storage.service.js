@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../../config/database.js";
+import { supabaseAdmin } from "../config/database.js";
 import fs from "fs/promises";
 import path from "path";
 

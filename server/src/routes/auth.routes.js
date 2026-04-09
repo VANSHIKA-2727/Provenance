@@ -6,7 +6,7 @@ const router = Router();
 
 // Public routes
 router.post("/sync", authController.syncUser);
-router.post("/verify", authController.verifyToken); // For gateway
+router.post("/verify", authController.verifyToken);
 router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password", authController.resetPassword);
 

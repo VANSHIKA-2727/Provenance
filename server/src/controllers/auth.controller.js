@@ -1,4 +1,4 @@
-import { authService } from "../services/internal/auth.service.js";
+import { authService } from "../services//auth.service.js";
 import { supabaseAdmin } from "../config/database.js";
 
 export const authController = {

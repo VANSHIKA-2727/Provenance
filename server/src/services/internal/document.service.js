@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "../../config/database.js";
-import { storageService } from "./storage.service.js";
+import { storageService } from "../storage.service.js";
 import { ocrService } from "../external/ocr.service.js";
 import { ragService } from "../external/rag.service.js";
 import { env } from "../../config/env.js";
